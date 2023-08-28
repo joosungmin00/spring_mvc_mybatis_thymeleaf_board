@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+                        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+                        
+<!-- 네임스페이스(사용영역) 설정 -->
+<mapper namespace="com.ezen.springmvc.domain.article.mapper.ArticleMapper">
+
+	<!-- 요청 페이지, 페이지당 보여지는 목록 갯수에 따른 목록 반환 -->
+	<select id="findByAll" resultType="ArticleDTO" parameterType="com.ezen.springmvc.domain.common.web.PageParams">
+		SELECT article_id,
+			   subject,
+			   writer,
+		       regdate, 
+       		   hitcount,
+       		   page 
+		FROM   (SELECT  CEIL(rownum / 10) page,
+						article_id, 
+               			subject, 
+               			writer, 
+               			TO_CHAR(regdate, 'YYYY-MM-DD HH24:MI') regdate, 
+               			hitcount 
+        		FROM   (SELECT  article_id,
+        						subject, 
+                           		writer, 
+                           		regdate, 
+                           		hitcount 
+                    	FROM    article 
+                    	 <where>
+         					<if test="type == 'subject'">
+            					AND subject LIKE '%' || #{input} || '%'
+         					</if>
+         					<if test="type == 'content'">
+            					AND content LIKE '%' || #{input} || '%'
+        	 				</if>
+         					<if test="type == 'writer'">
+            					AND writer = #{input}
+         					</if>
+         					<if test="type == 'subject_content'">
+            					AND (subject LIKE '%' || #{input} || '%' OR
+            					content LIKE '%' || #{input} || '%')
+         					</if>
+         					<if test="type == 'subject_content_writer'">
+            					AND (subject LIKE '%' || #{input} || '%' OR content LIKE '%' ||
+            					#{input} || '%' OR writer LIKE '%' || #{input} || '%')
+         					</if>
+      							AND board_id = #{boardId}
+      						</where>
+						ORDER  BY group_no DESC, order_no ASC)) 
+		WHERE  page = #{requestPage}
+	</select>
+	
+	<!-- 페이징 계산에 필요한 게시글 전체 개수 반환 -->
+	<select id="getCountAll" resultType="int" parameterType="com.ezen.springmvc.domain.common.web.PageParams">
+		SELECT COUNT(article_id)
+		FROM   article
+    	<where>
+        	<if test="type == 'writer'">
+            	AND writer = #{input}
+        	</if>
+        	<if test="type == 'subject'">
+            	AND subject LIKE '%' || #{input} || '%'
+        	</if>
+        	<if test="type == 'content'">
+            	AND content LIKE '%' || #{input} || '%'
+        	</if>
+         	<if test="type == 'subject_content'">
+            	AND (subject LIKE '%' || #{input} || '%' OR
+            	content LIKE '%' || #{input} || '%')
+         	</if>
+         	<if test="type == 'subject_content_writer'">
+            	AND (subject LIKE '%' || #{input} || '%' OR content LIKE '%' ||
+            	#{input} || '%' OR writer LIKE '%' || #{input} || '%')
+         	</if>        	
+            	AND board_id = #{boardId}
+    	</where>
+	</select>
+	
+	<!-- 신규 게시글 등록 -->
+   <insert id="create" parameterType="ArticleDTO" >
+      INSERT INTO article
+                      (article_id,
+                     board_id,
+                     writer,
+                     subject,
+                     content,
+                     passwd,
+                     group_no,
+                     level_no,
+                     order_no)
+      VALUES      (article_id_seq.NEXTVAL,
+                   #{boardId},
+                   #{writer},
+                   #{subject},
+                   #{content},
+                   #{passwd},
+                   article_id_seq.CURRVAL,
+                   #{levelNo},
+                   0)
+   </insert>
+   
+   <!-- 게시글 수정 -->
+   <update id="updateArticle" parameterType="map">
+      UPDATE article
+      <set>
+           <if test="subject != null">subject = #{subject},</if>
+           <if test="content != null">content = #{content},</if>
+       </set>
+       WHERE article_id = #{articleId}
+   </update>
+   
+   
+   <!-- 게시글 삭제 -->
+   <delete id="removeArticle" parameterType="map">
+      DELETE 
+      FROM article
+      WHERE      
+      <if test="levelNo != null">
+         <choose>
+            <when test="levelNo == 0">
+               group_no = #{groupNo}
+            </when>
+            <otherwise>
+               passwd = #{passwd} 
+             AND article_id = #{articleId} 
+            </otherwise>
+         </choose>
+      </if>      
+   </delete>
+	
+	<!-- 답글 생성 -->
+   <insert id="reply" parameterType="ArticleDTO">
+      INSERT INTO article
+                  (article_id,
+                   board_id,
+                   writer,
+                   subject,
+                   content,
+                   passwd,
+                   group_no,
+                   level_no,
+                   order_no)
+      VALUES      (article_id_seq.NEXTVAL,
+                   #{boardId},
+                   #{writer},
+                   #{subject},
+                   #{content},
+                   #{passwd},
+                   #{groupNo},
+                   #{levelNo} + 1,
+                   (SELECT MAX(order_no) + 1
+                    FROM   article
+                    WHERE  board_id = #{boardId}
+                           AND group_no = #{groupNo}))
+   
+   </insert>
+   
+   <!-- 게시글 상세보기 (게시판id 파라미터 받는다는 가정) -->
+   <select id="openArticle" parameterType="int" resultType="ArticleDTO">
+      SELECT    article_id AS articleId,
+            	writer,
+            	subject,
+            	content,
+            	regdate,
+            	board_id
+      FROM   	article
+      WHERE     article_id = #{articleId}
+   </select>
+   
+   <!-- 대댓글 전 orderNo 조정 -->
+   <update id="updateOrderNo" parameterType="map">
+      UPDATE article 
+         SET    order_no = order_no + 1 
+         WHERE  board_id = #{boardId} 
+             AND group_no = #{groupNo} 
+             AND order_no &gt; (SELECT order_no 
+                       FROM   article 
+                       WHERE  article_id = #{articleId})
+   </update>
+   
+   
+   <!-- 대댓글 생성 -->
+   <insert id="replyComent">
+      INSERT INTO article
+                  (article_id,
+                   board_id,
+                   writer,
+                   subject,
+                   content,
+                   passwd,
+                   group_no,
+                   level_no,
+                   order_no)
+      VALUES      (
+                   article_id_seq.NEXTVAL,
+                   #{article.boardId},
+                   #{article.writer},
+                   #{article.subject},
+                   #{article.content},
+                   #{article.passwd},
+                   #{article.groupNo},
+                   #{article.levelNo},
+                   (SELECT order_no + 1
+                    FROM   article
+                    WHERE  article_id = #{articleId}))
+   </insert>
+   
+	
+</mapper>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+
+<th:block th:replace="~{/layout/layoutV1 :: setContent(~{this :: title}, ~{this :: content})}">
+   
+   <th:block th:fragment="title">
+      <title>스프링 기반 게시판 연습페이지입니다.</title>
+   </th:block>
+
+   <th:block th:fragment="content">
+
+      <div class="container-fluid">
+        <h1 class="mt-4">게시글 상세</h1>
+        <hr>
+        <div class="form-group">
+          <label>게시글 번호</label>
+          <input type="text" class="form-control" th:value="${article.articleId}" readonly>
+        </div>
+
+        <div class="form-group">
+          <label>제목</label>
+          <input type="text" class="form-control" th:value="${article.subject}"  readonly>
+        </div>
+        <div class="form-group">
+          <label>내용</label>
+          <textarea class="form-control" rows="5" th:text="${article.content}" readonly>게시글 내용입니다.</textarea>
+        </div>
+        <div class="form-group">
+          <label>작성자</label>
+          <input type="text" class="form-control" name="writer" th:value="${article.writer}" readonly>
+        </div>
+        <div class="form-group">
+          <label>등록일자</label>
+          <input type="text" class="form-control" name="regDate" th:value="${article.regdate}" readonly>
+        </div>
+
+        <a th:href="@{'/article/update/' + ${article.articleId}}">
+          <button type="button" class="btn btn-primary">수정</button>
+        </a>
+
+        <a th:href="@{'/board/' + ${article.boardId} + '/1'}">
+          <button type="button" class="btn btn-info">목록</button>
+        </a>
+      </div>
+ </th:block>
+ </th:block>
+</html>

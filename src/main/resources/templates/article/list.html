@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+
+<th:block th:replace="~{/layout/layoutV1 :: setContent(~{this :: title}, ~{this :: content})}">
+   
+   <th:block th:fragment="title">
+      <title>스프링 기반 게시판 연습페이지입니다.</title>
+   </th:block>
+
+   <th:block th:fragment="content">
+
+
+      <div class="container-fluid">
+        <h2 class="mt-4" th:text="${boardTitle}">자유게시판 목록</h2>
+          <span>
+            <a th:href="@{'/board/'+${boardId}+'/create'}">
+              <button type="button" class="btn btn-success">게시글 쓰기</button>
+            </a>
+          </span>
+
+        <hr>
+
+        <form th:action="@{/board/{boardId}/{page}(boardId=${boardId}, page=1, type=${#strings.isEmpty(type) ? null : type}, input=${#strings.isEmpty(input) ? '': input})}" method="get" id="searchForm">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <select class="custom-select" name="type">
+                <option selected>----- 검색유형 -----</option>
+                <option value="subject">제목</option>
+                <option value="content">내용</option>
+                <option value="writer">작성자</option>
+                <option value="subject_content">제목 + 내용</option>
+                <option value="subject_content_writer">제목 + 내용 + 작성자</option>
+              </select>
+            </div>
+            <input type="search" class="form-control" name="input">
+            <div class="input-group-append" id="button-addon4">
+              <button class="btn btn-success btn-search" type="submit">검색</button>
+            </div>
+          </div>
+        </form>
+
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">번호</th>
+              <th scope="col">제목</th>
+              <th scope="col">작성자</th>
+              <th scope="col">조회수</th>
+              <th scope="col">등록일자</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr th:each="article : ${list}">
+              <th scope="row" th:text="${article.articleId}">1</th>
+              <td><a th:text="${article.subject}" th:href="@{/article/{id}(id=${article.articleId})}">게시글 제목</a></td>
+              <td th:text="${article.writer}">홍길동</td>
+              <td th:text="${article.hitcount}">5</td>
+              <td th:text="${article.regdate}">2023-05-05</td>
+            </tr>
+          </tbody>
+
+        </table>
+
+        <ul class="pagination h-100 justify-content-center align-items-center">
+
+          <!-- 처음으로 보여주기 여부 -->
+<li th:if="${pagination.showFirst}" class="page-item">
+    <a class="page-link" th:href="@{/board/{boardId}/{page}(boardId=${boardId}, page=1, type=${#strings.isEmpty(type) ? null : type}, input=${#strings.isEmpty(input) ? null : input})}" aria-label="First">
+        <span aria-hidden="true">처음으로</span>
+    </a>
+</li>
+
+<!-- 이전 페이지로 이동 링크 -->
+    <li th:if="${pagination.showPrevious}" class="page-item">
+        <a class="page-link" th:href="@{/board/{boardId}/{page}(boardId=${boardId}, page=${pagination.previousStartPage}, type=${#strings.isEmpty(type) ? null : type}, input=${#strings.isEmpty(input) ? null : input})}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+        </a>
+    </li>
+    
+    <!-- 페이지 목록 -->
+    <li th:each="i : ${#numbers.sequence(pagination.startPage, pagination.endPage)}" class="page-item">
+        <a class="page-link" th:href="@{/board/{boardId}/{page}(boardId=${boardId}, page=${i}, type=${#strings.isEmpty(type) ? null : type}, input=${#strings.isEmpty(input) ? null : input})}" th:text="${i}"></a>
+    </li>
+    
+    <!-- 다음 페이지로 이동 링크 -->
+    <li th:if="${pagination.showNext}" class="page-item">
+        <a class="page-link" th:href="@{/board/{boardId}/{page}(boardId=${boardId}, page=${pagination.nextStartPage}, type=${#strings.isEmpty(type) ? null : type}, input=${#strings.isEmpty(input) ? null : input})}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+        </a>
+    </li>
+
+<!-- 마지막으로 보여주기 여부 -->
+<li th:if="${pagination.showLast}" class="page-item">
+    <a class="page-link" th:href="@{/board/{boardId}/{page}(boardId=${boardId}, page=${pagination.totalPages}, type=${#strings.isEmpty(type) ? null : type}, input=${#strings.isEmpty(input) ? null : input})}" aria-label="Last">
+        <span aria-hidden="true">마지막으로</span>
+    </a>
+</li>
+        </ul>
+      </div>
+    </th:block>
+    </th:block>
+</html>

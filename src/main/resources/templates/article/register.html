@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<th:block
+   th:replace="~{/layout/layoutV1 :: setContent(~{this :: title}, ~{this :: content})}">
+
+   <th:block th:fragment="title">
+      <title>게시글을 작성하세요</title>
+   </th:block>
+
+   <th:block th:fragment="content">
+      <div class="d-flex" id="wrapper">
+
+
+         <div class="container-fluid">
+            <h1 class="mt-4">게시글 쓰기</h1>
+            <hr>
+            <form th:action="@{'/board/'+${boardId}+'/create'}" th:object="${articleDTO}"
+               method="post">
+               <div class="form-group">
+                  <label>제목</label> <input type="text" class="form-control"
+                     placeholder="Enter Title" th:field="*{subject}">
+               </div>
+               <div class="form-group">
+                  <label>내용</label>
+                  <textarea class="form-control" rows="5" th:field="*{content}"></textarea>
+               </div>
+               <div class="form-group">
+                  <label>작성자</label> <input type="text" class="form-control"
+                     placeholder="Enter Writer" th:field="*{writer}">
+               </div>
+
+				 
+               <div class="form-group">
+                  <label>비밀번호</label> <input type="text" class="form-control"
+                     placeholder="Enter Password" th:field="*{passwd}"> 
+               </div>
+               <button type="submit" class="btn btn-success">Submit</button>
+            </form>
+         </div>
+      </div>
+
+   </th:block>
+</th:block>
+
+</html>
